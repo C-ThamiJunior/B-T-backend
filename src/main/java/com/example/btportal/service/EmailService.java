@@ -1,7 +1,9 @@
 package com.example.btportal.service;
 
 import com.example.btportal.model.FileDocument;
+import com.example.btportal.model.GeneratePostApplication;
 import com.example.btportal.model.PostApplication;
+import com.example.btportal.repository.GeneratePostApplicationRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,15 +19,23 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+    @Autowired
+    private GeneratePostApplicationRepository generatePostApplicationRepository;
 
     public void sendApplicationEmailWithCV(PostApplication app) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-            String jobTitle = app.getGeneratePostApplication() != null
-                    ? app.getGeneratePostApplication().getTitle()
-                    : "Unknown Job";
+            String jobTitle = "Unknown Job";
+            if (app.getGeneratePostApplication() != null) {
+                Long postId = app.getGeneratePostApplication().getId();
+                GeneratePostApplication fullPost = generatePostApplicationRepository.findById(postId).orElse(null);
+                if (fullPost != null) {
+                    jobTitle = fullPost.getTitle();
+                }
+            }
+
 
             helper.setTo("Mhlangathamy@gmail.com"); // 🔁 replace with HR email
             helper.setSubject("New Application for: " + jobTitle);
