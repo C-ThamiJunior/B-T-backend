@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Apply CORS config
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/**","/files/**","/api/post/hide/**"
+                                "/api/**","/files/**"
                         ).permitAll() // ✅ Public endpoints
                         .anyRequest().authenticated() // 🔒 Protect all others
                 )

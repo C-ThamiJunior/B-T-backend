@@ -1,15 +1,11 @@
 package com.example.btportal.controller;
 
 
-import com.example.btportal.dto.request.EnrollingTraineeRequest;
 import com.example.btportal.dto.request.GeneratePostApplicationRequest;
-import com.example.btportal.dto.request.LoginRequest;
 import com.example.btportal.dto.request.PostApplicationRequest;
-import com.example.btportal.dto.response.EnrollingTraineeResponse;
 import com.example.btportal.dto.response.GeneratePostApplicationResponse;
 import com.example.btportal.dto.response.PostApplicationResponse;
 import com.example.btportal.model.*;
-import com.example.btportal.repository.FileDocumentRepository;
 import com.example.btportal.repository.GeneratePostApplicationRepository;
 import com.example.btportal.security.JwtUtil;
 import com.example.btportal.service.EnrollingTrainieeService;
@@ -17,9 +13,7 @@ import com.example.btportal.service.GeneratePostApplicationService;
 import com.example.btportal.service.PostApplicationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +25,7 @@ import java.util.*;
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api")
-public class Controller {
+public class ApplicationController {
 
     @Autowired
     private GeneratePostApplicationRepository postRepository;
@@ -43,7 +37,7 @@ public class Controller {
     private final PasswordEncoder passwordEncoder;
 
 
-    public Controller(GeneratePostApplicationService generatePostApplicationService, PostApplicationService postApplicationService, EnrollingTrainieeService enrollingTrainieeService, JwtUtil jwtUtil, ObjectMapper objectMapper, PasswordEncoder passwordEncoder) {
+    public ApplicationController(GeneratePostApplicationService generatePostApplicationService, PostApplicationService postApplicationService, EnrollingTrainieeService enrollingTrainieeService, JwtUtil jwtUtil, ObjectMapper objectMapper, PasswordEncoder passwordEncoder) {
         this.generatePostApplicationService = generatePostApplicationService;
         this.postApplicationService = postApplicationService;
         this.enrollingTrainieeService = enrollingTrainieeService;
@@ -138,35 +132,6 @@ public class Controller {
         return response;
     }
 
-    @RestController
-    @RequestMapping("/files")
-    public class FileController {
-
-        private final FileDocumentRepository fileDocumentRepository;
-
-        public FileController(FileDocumentRepository fileDocumentRepository) {
-            this.fileDocumentRepository = fileDocumentRepository;
-        }
-
-        @GetMapping("/{fileName}")
-        public ResponseEntity<byte[]> downloadFile(@PathVariable String fileName) {
-            List<FileDocument> files = fileDocumentRepository.findByFileName(fileName);
-
-            if (files.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-
-            FileDocument file = files.get(0); // Download first match or add logic to choose
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFileName() + "\"")
-                    .contentType(MediaType.parseMediaType(file.getFileType()))
-                    .body(file.getData());
-        }
-
-
-    }
-
     @PutMapping("/post/update/{id}")
     public ResponseEntity<GeneratePostApplicationResponse> updatePost(
             @PathVariable Long id,
@@ -186,44 +151,6 @@ public class Controller {
             return ResponseEntity.ok("Post hidden successfully.");
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found.");
-    }
-
-
-
-    @PostMapping("/auth/login")
-    public Map<String, Object> login(@RequestBody LoginRequest loginRequest) {
-        Map<String, Object> response = new HashMap<>();
-        String generatedToken = null;
-
-        String authMsg = enrollingTrainieeService.authenticateEnrollingTraniee(
-                loginRequest.getEmail(), loginRequest.getPassword()
-        );
-
-        generatedToken = jwtUtil.generateToken(loginRequest.getEmail());
-
-        response.put("message", authMsg);
-        response.put("token", generatedToken);
-
-        return response;
-    }
-
-    @PostMapping("/enrolling-trainiee/create-trainiee")
-    public String  createTrainee(@RequestBody EnrollingTraineeRequest request) {
-
-        String answer = null;
-
-        answer =  enrollingTrainieeService.createTrainee(request);
-
-        return answer;
-    }
-
-    @GetMapping("/enrolling-trainiee/getTrainiee{id}")
-    public EnrollingTraineeResponse getEnrollingTrainee(@PathVariable Long id) {
-        EnrollingTraineeResponse enrollingTraineeResponse = null;
-
-        enrollingTraineeResponse = enrollingTrainieeService.getEnrollingTraineeById(id);
-
-        return enrollingTraineeResponse;
     }
 
 }
