@@ -5,8 +5,8 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: your_database
-      MYSQL_ROOT_PASSWORD: your_password
+      MYSQL_DATABASE: railway
+      MYSQL_ROOT_PASSWORD: MtdNbshfQoHKkyDcFnmXmvFsMlaqsTkO
     networks:
       - backend
 
@@ -17,9 +17,9 @@ services:
     environment:
       MYSQLHOST: db
       MYSQLPORT: 3306
-      MYSQLDATABASE: your_database
+      MYSQLDATABASE: railway
       MYSQLUSER: root
-      MYSQLPASSWORD: your_password
+      MYSQLPASSWORD: MtdNbshfQoHKkyDcFnmXmvFsMlaqsTkO
     networks:
       - backend
 
