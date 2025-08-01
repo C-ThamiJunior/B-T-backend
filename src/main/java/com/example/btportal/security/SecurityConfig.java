@@ -32,10 +32,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless REST APIs
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Apply CORS config
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/**","/files/**"
-                        ).permitAll() // ✅ Public endpoints
-                        .anyRequest().authenticated() // 🔒 Protect all others
+                        .requestMatchers("/api/auth/**","/files/**")
+                        .permitAll()
+                        .requestMatchers("/api/companies/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

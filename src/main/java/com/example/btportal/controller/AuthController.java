@@ -1,11 +1,9 @@
 package com.example.btportal.controller;
 
-// Auth ApplicationController
-// src/main/java/com/lms/controller/AuthController.java
-
 import com.example.btportal.dto.request.LoginRequest;
 import com.example.btportal.dto.request.RegisterRequest;
 import com.example.btportal.model.User;
+import com.example.btportal.security.JwtUtil;
 import com.example.btportal.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,13 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid; // For input validation
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-// Lombok annotations for DTOs if not using inner classes
-// import lombok.Getter;
-// import lombok.Setter;
-
 /**
  * REST ApplicationController for user authentication and registration.
  * Handles API requests related to user login and new user registration.
@@ -30,13 +24,12 @@ import java.util.Optional;
 public class AuthController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
-    /**
-     * Constructor for dependency injection.
-     * @param userService The service responsible for user-related business logic.
-     */
-    public AuthController(UserService userService) {
+
+    public AuthController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -79,26 +72,32 @@ public class AuthController {
      * @param loginRequest The request body containing username and password.
      * @return ResponseEntity with authentication token/user details or error message.
      */
-    @PostMapping("/login") // Maps HTTP POST requests to /api/auth/login
+    @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
-        Optional<User> authenticatedUser = userService.authenticateUser(loginRequest.getEmail(), loginRequest.getPassword());
+        Optional<User> authenticatedUser = userService.authenticateUser(
+                loginRequest.getEmail(), loginRequest.getPassword());
 
         return authenticatedUser
                 .map(user -> {
+                    String token = jwtUtil.generateToken(
+                            user,
+                            List.of("ROLE_" + user.getRole())
+                    );
 
                     Map<String, Object> response = new HashMap<>();
                     response.put("message", "Login successful");
-                    // For now, returning user details (excluding password) and a mock token
                     response.put("user", Map.of(
                             "id", user.getId(),
                             "firstname", user.getFirstname(),
                             "email", user.getEmail(),
                             "role", user.getRole(),
-                            "token", "mock_jwt_token_for_" + user.getFirstname() // Placeholder token
+                            "token", token
                     ));
-                    return ResponseEntity.ok(response); // Return 200 OK status
+
+                    return ResponseEntity.ok(response);
                 })
-                .orElse(new ResponseEntity<>(Map.of("message", "Invalid email or password"), HttpStatus.UNAUTHORIZED)); // Return 401 Unauthorized
+                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid email or password")));
     }
 }
 

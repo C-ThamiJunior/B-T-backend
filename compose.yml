@@ -1,28 +1,27 @@
 services:
   db:
-    image: mysql:8.0
-    container_name: mysql
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_DATABASE: btskillsdb
+      MYSQL_ROOT_PASSWORD: password123
     ports:
       - "3306:3306"
-    environment:
-      MYSQL_DATABASE: railway
-      MYSQL_ROOT_PASSWORD: MtdNbshfQoHKkyDcFnmXmvFsMlaqsTkO
-    networks:
-      - backend
+    volumes:
+      - mysql_data:/var/lib/mysql
 
-  backend:
+  app:
     build: .
     depends_on:
       - db
+    volumes:
+      - .:/app
+    ports:
+      - "8081:8081"
     environment:
-      MYSQLHOST: db
-      MYSQLPORT: 3306
-      MYSQLDATABASE: railway
-      MYSQLUSER: root
-      MYSQLPASSWORD: MtdNbshfQoHKkyDcFnmXmvFsMlaqsTkO
-    networks:
-      - backend
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/btskillsdb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: password123
 
-networks:
-  backend:
-
+volumes:
+  mysql_data:

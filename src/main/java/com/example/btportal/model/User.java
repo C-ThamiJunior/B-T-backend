@@ -3,6 +3,7 @@ package com.example.btportal.model;
 import jakarta.persistence.*; // Using jakarta for Spring Boot 3+
 import lombok.Data; // Lombok annotation for generating boilerplate code (getters, setters, equals, hashCode, toString)
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -32,6 +33,7 @@ public class User {
     @Column(nullable = false)
     private Role role; // User's role (e.g., STUDENT, INSTRUCTOR, ADMIN)
 
+    private LocalDateTime lastLogin;
     private Date creationDate;
 
     @PrePersist

@@ -17,7 +17,7 @@ import java.util.Optional;
 @Repository // Marks this interface as a Spring Data JPA repository
 public interface UserRepository extends JpaRepository<User, Long> {
     /**
-     * Finds a user by their username.
+     * Finds a user by their email.
      * Spring Data JPA automatically generates the query for this method.
      * @param email The username to search for.
      * @return An Optional containing the User if found, or empty if not.
