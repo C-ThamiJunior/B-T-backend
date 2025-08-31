@@ -1,10 +1,13 @@
 package com.example.btportal.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Table(name = "companies")
@@ -32,6 +35,10 @@ public class Company {
     @Column(length = 1000)
     private String notes;
     private String createdAt;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Comment> comments;
 
     // Enum for company status
     public enum CompanyStatus {

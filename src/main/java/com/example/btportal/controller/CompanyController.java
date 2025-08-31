@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/companies")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH, RequestMethod.DELETE})
 public class CompanyController {
 
     @Autowired
@@ -53,25 +53,14 @@ public class CompanyController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Company> patchCompany(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
-        try {
-            Company updatedCompany = companyService.patchCompany(id, updates);
-            return ResponseEntity.ok(updatedCompany);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Company> updateCompany(
+            @PathVariable Long id,
+            @RequestBody Company updatedCompany
+    ) {
+        Company company = companyService.updateCompany(id, updatedCompany);
+        return ResponseEntity.ok(company);
     }
 
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Company> updateCompany(@PathVariable Long id, @RequestBody Company companyDetails) {
-        try {
-            Company updatedCompany = companyService.updateCompany(id, companyDetails);
-            return ResponseEntity.ok(updatedCompany);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCompany(@PathVariable Long id) {
