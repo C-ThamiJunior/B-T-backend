@@ -19,9 +19,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://root:OyqJyUTrYpadvNAJDOkqVQfLOQLIDTNe@switchback.proxy.rlwy.net:28322/railway
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/btskillsdb
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: OyqJyUTrYpadvNAJDOkqVQfLOQLIDTNe
+      SPRING_DATASOURCE_PASSWORD: password123
 
 volumes:
   mysql_data:
