@@ -1,5 +1,6 @@
 package com.example.btportal.controller;
 
+import com.example.btportal.dto.ResetPasswordReques;
 import com.example.btportal.model.User;
 import com.example.btportal.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,4 +35,6 @@ public class UserController {
     public User createUser(@RequestBody User user) {
         return userService.registerUser(user);
     }
+
+
 }
