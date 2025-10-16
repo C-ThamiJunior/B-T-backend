@@ -32,8 +32,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless REST APIs
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Apply CORS config
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**","/files/**")
-                        .permitAll()
+                        .requestMatchers("/api/auth/**","/files/**").permitAll()
+                        .requestMatchers("/api/post/**").permitAll()
                         .requestMatchers("/api/companies/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

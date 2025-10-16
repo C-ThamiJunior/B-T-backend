@@ -1,5 +1,6 @@
 package com.example.btportal.controller;
 
+import com.example.btportal.dto.ResetPasswordReques;
 import com.example.btportal.dto.request.LoginRequest;
 import com.example.btportal.dto.request.RegisterRequest;
 import com.example.btportal.model.User;
@@ -98,6 +99,12 @@ public class AuthController {
                 })
                 .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Invalid email or password")));
+    }
+
+    @PatchMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordReques request) {
+        userService.resetPassword(request.getEmail(), request.getNewPassword());
+        return ResponseEntity.ok("Password reset successfully");
     }
 }
 

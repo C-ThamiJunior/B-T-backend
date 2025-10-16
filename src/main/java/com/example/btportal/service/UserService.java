@@ -70,7 +70,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         // Set default role if not explicitly provided (e.g., during admin creation)
         if (user.getRole() == null) {
-            user.setRole(Role.ADMIN); // Default role for new registrations
+            user.setRole(Role.ADMIN); // Dehttps://application-admin.onrender.com/registerfault role for new registrations
         }
         return userRepository.save(user);
     }
@@ -95,6 +95,17 @@ public class UserService {
         }
         return Optional.empty();
     }
+
+    @Transactional
+    public User resetPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Encode new password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userRepository.save(user);
+    }
+
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
