@@ -10,12 +10,11 @@ import java.util.Optional;
 @Repository
 public interface AssignmentSubmissionRepository extends JpaRepository<AssignmentSubmission, Long> {
 
-    // Find all submissions for a specific assignment
-    List<AssignmentSubmission> findByAssignmentId(Long assignmentId);
+    // ✅ FIXED: Changed 'LearnerId' to 'StudentId'
+    // This works because Spring knows 'student' has an 'id' field.
+    Optional<AssignmentSubmission> findByAssignmentIdAndStudentId(Long assignmentId, Long studentId);
 
-    // Find all submissions from a specific learner
-    List<AssignmentSubmission> findByLearnerId(Long learnerId);
-
-    // Find a specific submission by a specific learner for a specific assignment
-    Optional<AssignmentSubmission> findByAssignmentIdAndLearnerId(Long assignmentId, Long learnerId);
+    // If you have other methods using 'LearnerId', update them too:
+    // List<AssignmentSubmission> findByLearnerId(Long learnerId);  <-- DELETE THIS
+    List<AssignmentSubmission> findByStudentId(Long studentId); // <-- USE THIS
 }
