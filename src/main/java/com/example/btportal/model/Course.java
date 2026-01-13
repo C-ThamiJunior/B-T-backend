@@ -21,7 +21,7 @@ public class Course {
     private String description;
 
     @ManyToOne
-    private User instructor;
+    private User facilitator;
 
     private LocalDateTime createAt;
     private LocalDateTime updatedAt;

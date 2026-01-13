@@ -1,9 +1,12 @@
 package com.example.btportal.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 public class Message {
     @Id

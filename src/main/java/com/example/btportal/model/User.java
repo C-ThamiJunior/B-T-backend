@@ -40,4 +40,8 @@ public class User {
     protected void onCreate() {
         this.creationDate = new Date();
     }
+
+    public String getFullName() {
+        return firstname + " " + surname;
+    }
 }
