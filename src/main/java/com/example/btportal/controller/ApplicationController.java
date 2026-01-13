@@ -1,6 +1,5 @@
 package com.example.btportal.controller;
 
-
 import com.example.btportal.dto.request.GeneratePostApplicationRequest;
 import com.example.btportal.dto.request.PostApplicationRequest;
 import com.example.btportal.dto.response.GeneratePostApplicationResponse;
@@ -22,13 +21,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.*;
 
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") // Allows your React Frontend to talk to this Backend
 @RestController
 @RequestMapping("/api")
 public class ApplicationController {
 
-    @Autowired
-    private GeneratePostApplicationRepository postRepository;
+    private final GeneratePostApplicationRepository postRepository;
     private final GeneratePostApplicationService generatePostApplicationService;
     private final JwtUtil jwtUtil;
     private final PostApplicationService postApplicationService;
@@ -36,8 +34,17 @@ public class ApplicationController {
     private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
 
-
-    public ApplicationController(GeneratePostApplicationService generatePostApplicationService, PostApplicationService postApplicationService, EnrollingTrainieeService enrollingTrainieeService, JwtUtil jwtUtil, ObjectMapper objectMapper, PasswordEncoder passwordEncoder) {
+    // ✅ FIX: All dependencies are now in the constructor
+    @Autowired
+    public ApplicationController(
+            GeneratePostApplicationRepository postRepository,
+            GeneratePostApplicationService generatePostApplicationService,
+            PostApplicationService postApplicationService,
+            EnrollingTrainieeService enrollingTrainieeService,
+            JwtUtil jwtUtil,
+            ObjectMapper objectMapper,
+            PasswordEncoder passwordEncoder) {
+        this.postRepository = postRepository;
         this.generatePostApplicationService = generatePostApplicationService;
         this.postApplicationService = postApplicationService;
         this.enrollingTrainieeService = enrollingTrainieeService;
@@ -47,31 +54,20 @@ public class ApplicationController {
     }
 
     @PostMapping("/post/createpostform")
-    public String generatePostApplication(@RequestBody GeneratePostApplicationRequest generatePostApplicationRequest) {
-
+    public ResponseEntity<String> generatePostApplication(@RequestBody GeneratePostApplicationRequest generatePostApplicationRequest) {
         generatePostApplicationService.saveGeneratePostApplication(generatePostApplicationRequest);
-
-        return "You have successfully created a job/intern/learnership post";
+        return ResponseEntity.ok("You have successfully created a job/intern/learnership post");
     }
-
-//    @GetMapping("/post/getcreatedallposts")
-//    public List<GeneratePostApplicationResponse> getAllGeneratePostApplication() {
-//        List<GeneratePostApplicationResponse> generatedPosts = new ArrayList<>();
-//
-//        generatedPosts = generatePostApplicationService.getGeneratedPostAll();
-//
-//        return generatedPosts;
-//
-//    }
 
     @GetMapping("/post/visible")
-    public List<GeneratePostApplicationResponse> getVisiblePosts() {
-        return generatePostApplicationService.getVisiblePosts();
+    public ResponseEntity<List<GeneratePostApplicationResponse>> getVisiblePosts() {
+        return ResponseEntity.ok(generatePostApplicationService.getVisiblePosts());
     }
 
-
     @PostMapping(value = "/post/apply", consumes = "multipart/form-data")
-    public String uploadPostApplication(@ModelAttribute PostApplicationRequest request) {
+    public ResponseEntity<String> uploadPostApplication(@ModelAttribute PostApplicationRequest request) {
+        System.out.println("Received application for: " + request.getEmail()); // Debug Log for Railway
+
         try {
             // 1. Create and populate the PostApplication entity
             PostApplication postApp = new PostApplication();
@@ -82,17 +78,23 @@ public class ApplicationController {
             postApp.setRace(request.getRace());
             postApp.setEmail(request.getEmail());
             postApp.setPhoneNumber(request.getPhoneNumber());
-            postApp.setPassword(passwordEncoder.encode(request.getPassword()));
+
+            // Safety check for password
+            String rawPassword = request.getPassword() != null ? request.getPassword() : "defaultPass123";
+            postApp.setPassword(passwordEncoder.encode(rawPassword));
+
             postApp.setCreatedDate(new Date());
 
             // 2. Link GeneratePostApplication by ID
-            GeneratePostApplication gpa = new GeneratePostApplication();
-            gpa.setId(request.getGeneratePostApplicationId());
-            postApp.setGeneratePostApplication(gpa);
+            if (request.getGeneratePostApplicationId() != null) {
+                GeneratePostApplication gpa = new GeneratePostApplication();
+                gpa.setId(request.getGeneratePostApplicationId());
+                postApp.setGeneratePostApplication(gpa);
+            }
 
             // 3. Convert MultipartFile list into FileDocument entities
             List<FileDocument> fileDocs = new ArrayList<>();
-            if (request.getFiles() != null) {
+            if (request.getFiles() != null && !request.getFiles().isEmpty()) {
                 for (MultipartFile file : request.getFiles()) {
                     FileDocument fileDoc = new FileDocument();
                     fileDoc.setFileName(file.getOriginalFilename());
@@ -102,34 +104,32 @@ public class ApplicationController {
                     fileDocs.add(fileDoc);
                 }
             }
-
             postApp.setFiles(fileDocs);
 
             // 4. Save to database via service
-           String response = postApplicationService.savePostApplication(postApp);
+            String response = postApplicationService.savePostApplication(postApp);
 
-            return response;
+            return ResponseEntity.ok(response);
 
         } catch (IOException e) {
-            return "File processing error: " + e.getMessage();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("File processing error: " + e.getMessage());
         } catch (Exception e) {
-            return "Failed to save application: " + e.getMessage();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to save application: " + e.getMessage());
         }
     }
 
     @GetMapping("/post/all-applications")
-    public List<PostApplicationResponse> getAllApplications() {
-        return postApplicationService.getAllApplications();
+    public ResponseEntity<List<PostApplicationResponse>> getAllApplications() {
+        return ResponseEntity.ok(postApplicationService.getAllApplications());
     }
 
-
     @GetMapping("/post/getpostapplication/{id}")
-    public PostApplicationResponse getPostApplication(@PathVariable Long id) {
-        PostApplicationResponse response;
-
-        response = postApplicationService.getPostApplicationById(id);
-
-        return response;
+    public ResponseEntity<PostApplicationResponse> getPostApplication(@PathVariable Long id) {
+        return ResponseEntity.ok(postApplicationService.getPostApplicationById(id));
     }
 
     @PutMapping("/post/update/{id}")
@@ -152,5 +152,4 @@ public class ApplicationController {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found.");
     }
-
 }
