@@ -2,68 +2,74 @@ package com.example.btportal.service;
 
 import com.example.btportal.model.AssignmentSubmission;
 import com.example.btportal.repository.AssignmentSubmissionRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class AssignmentSubmissionService {
 
-    private final AssignmentSubmissionRepository submissionRepository;
-
-    // Called by a LEARNER to submit their work
-    public AssignmentSubmission submitAssignment(AssignmentSubmission submission) {
-        // Check if a submission already exists for this user and assignment
-        Optional<AssignmentSubmission> existing = submissionRepository
-                .findByAssignmentIdAndLearnerId(submission.getAssignmentId(), submission.getLearnerId());
-
-        if (existing.isPresent()) {
-            // Update existing submission
-            AssignmentSubmission subToUpdate = existing.get();
-            subToUpdate.setSubmissionText(submission.getSubmissionText());
-            subToUpdate.setSubmissionFileUrl(submission.getSubmissionFileUrl());
-            subToUpdate.setSubmissionDate(LocalDateTime.now());
-            // Clear old grade if resubmitting
-            subToUpdate.setScore(null);
-            subToUpdate.setFeedback(null);
-            subToUpdate.setGraderId(null);
-            subToUpdate.setGradedAt(null);
-            return submissionRepository.save(subToUpdate);
-        } else {
-            // Create new submission
-            submission.setSubmissionDate(LocalDateTime.now());
-            return submissionRepository.save(submission);
-        }
-    }
-
-    // Called by a FACILITATOR to grade the work
-    public AssignmentSubmission gradeSubmission(Long submissionId, Integer score, String feedback, Long graderId) {
-        AssignmentSubmission submission = submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new RuntimeException("Submission not found with id: " + submissionId));
-
-        submission.setScore(score);
-        submission.setFeedback(feedback);
-        submission.setGraderId(graderId);
-        submission.setGradedAt(LocalDateTime.now());
-
-        return submissionRepository.save(submission);
-    }
-
-    // Get all submissions for one assignment (for the grading tab)
-    public List<AssignmentSubmission> getSubmissionsForAssignment(Long assignmentId) {
-        return submissionRepository.findByAssignmentId(assignmentId);
-    }
+    @Autowired
+    private AssignmentSubmissionRepository submissionRepository;
 
     public List<AssignmentSubmission> getAllSubmissions() {
         return submissionRepository.findAll();
     }
 
-    // Get a specific submission
-    public Optional<AssignmentSubmission> getSubmissionById(Long id) {
-        return submissionRepository.findById(id);
+    // ✅ FIX: Updated to match new Entity structure
+    public AssignmentSubmission saveSubmission(AssignmentSubmission submission) {
+        // Check if a submission already exists for this Student + Assignment
+        // We use .getAssignment().getId() and .getStudent().getId() now
+        Optional<AssignmentSubmission> existing = submissionRepository.findAll().stream()
+                .filter(s -> s.getAssignment().getId().equals(submission.getAssignment().getId())
+                        && s.getStudent().getId().equals(submission.getStudent().getId()))
+                .findFirst();
+
+        if (existing.isPresent()) {
+            AssignmentSubmission subToUpdate = existing.get();
+            // ✅ FIX: Use getFileUrl() (New name)
+            if (submission.getFileUrl() != null) {
+                subToUpdate.setFileUrl(submission.getFileUrl());
+            }
+            // ✅ FIX: Use getSubmissionText()
+            if (submission.getSubmissionText() != null) {
+                subToUpdate.setSubmissionText(submission.getSubmissionText());
+            }
+            // Reset grade on re-submission if you want
+            // subToUpdate.setGrade(null);
+
+            return submissionRepository.save(subToUpdate);
+        }
+
+        return submissionRepository.save(submission);
+    }
+
+    public List<AssignmentSubmission> getSubmissionsByAssignment(Long assignmentId) {
+        // Assuming you have this custom query or filter manually
+        return submissionRepository.findAll().stream()
+                .filter(s -> s.getAssignment().getId().equals(assignmentId))
+                .toList();
+    }
+
+    public List<AssignmentSubmission> getSubmissionsByStudent(Long studentId) {
+        return submissionRepository.findAll().stream()
+                .filter(s -> s.getStudent().getId().equals(studentId))
+                .toList();
+    }
+
+    // ✅ FIX: Method to handle grading
+    @Transactional
+    public AssignmentSubmission gradeSubmission(Long id, Integer grade, String feedback) {
+        AssignmentSubmission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Submission not found"));
+
+        // ✅ FIX: Use setGrade instead of setScore
+        submission.setGrade(grade);
+        submission.setFeedback(feedback);
+
+        return submissionRepository.save(submission);
     }
 }
