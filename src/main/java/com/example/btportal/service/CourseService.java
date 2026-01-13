@@ -18,22 +18,31 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
 
-//    public Course createCourse(Long instructorId, Course course) {
-//        User instructor = userRepository.findById(instructorId)
-//                .orElseThrow(() -> new RuntimeException("Instructor not found"));
-//        course.setInstructor(instructor);
-//        course.setCreatedAt(LocalDateTime.now());
-//        return courseRepository.save(course);
-//    }
-
-    public List<Course> getCoursesByInstructor(Long instructorId) {
-        return courseRepository.findByInstructorId(instructorId);
+    // ✅ Create a new course
+    public Course createCourse(Long facilitatorId, Course course) {
+        User facilitator = userRepository.findById(facilitatorId)
+                .orElseThrow(() -> new RuntimeException("facilitator not found"));
+        course.setFacilitator(facilitator);
+        course.setCreateAt(LocalDateTime.now());
+        return courseRepository.save(course);
     }
 
+    // ✅ Get all courses (the missing one)
+    public List<Course> getAllCourses() {
+        return courseRepository.findAll();
+    }
+
+    // ✅ Get courses by instructor
+    public List<Course> getCoursesByFacilitator(Long facilitatorId) {
+        return courseRepository.findByFacilitatorId(facilitatorId);
+    }
+
+    // ✅ Get a single course
     public Optional<Course> getCourse(Long id) {
         return courseRepository.findById(id);
     }
 
+    // ✅ Delete a course
     public void deleteCourse(Long id) {
         courseRepository.deleteById(id);
     }

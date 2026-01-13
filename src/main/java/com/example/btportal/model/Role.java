@@ -9,6 +9,6 @@ package com.example.btportal.model;
  */
 public enum Role {
     STUDENT,     // Can enroll in courses, view lessons, take quizzes.
-    INSTRUCTOR,  // Can create and manage courses, lessons, and view student progress.
+    FACILITATOR,  // Can create and manage courses, lessons, and view student progress.
     ADMIN        // Has full administrative privileges, including user management.
 }
