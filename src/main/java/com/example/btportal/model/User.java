@@ -1,18 +1,20 @@
 package com.example.btportal.model;
 
-import jakarta.persistence.*; // Using jakarta for Spring Boot 3+
-import lombok.Data; // Lombok annotation for generating boilerplate code (getters, setters, equals, hashCode, toString)
+import jakarta.persistence.*;
+import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore; // ✅ Import this for the fix
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List; // ✅ Import List
 
 @Entity
-@Data // Lombok: Generates getters, setters, toString, equals, and hashCode methods
-@Table(name = "users") // Specifies the table name in the database
+@Data
+@Table(name = "users")
 public class User {
-    @Id // Marks the field as the primary key
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Configures the primary key generation strategy
-    private Long id; // Unique identifier for the user
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false)
     private String firstname;
@@ -24,17 +26,36 @@ public class User {
     private String contactNumber;
 
     @Column(nullable = false)
-    private String password; // Hashed password for security
+    private String password;
 
-    @Column(unique = true, nullable = false) // Ensures email is unique and not null
-    private String email; // User's email address
+    @Column(unique = true, nullable = false)
+    private String email;
 
-    @Enumerated(EnumType.STRING) // Stores the enum name (e.g., "STUDENT") as a string in the DB
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role; // User's role (e.g., STUDENT, INSTRUCTOR, ADMIN)
+    private Role role;
 
     private LocalDateTime lastLogin;
     private Date creationDate;
+
+    // --- RELATIONSHIPS (The cause of your 500 Error) ---
+
+    // 1. A User has many Enrollments
+    // @JsonIgnore stops the loop: User -> Enrollment -> User -> Enrollment...
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Enrollment> enrollments;
+
+    // 2. A User (Student) has many Submissions
+    @OneToMany(mappedBy = "student") // Ensure this matches 'private User student' in AssignmentSubmission
+    @JsonIgnore
+    private List<AssignmentSubmission> submissions;
+
+    // 3. A User (Facilitator) might have created courses
+    // Optional: Only needed if you want to see "Courses Created By Me" from the User side
+    @OneToMany(mappedBy = "facilitator")
+    @JsonIgnore
+    private List<Course> coursesCreated;
 
     @PrePersist
     protected void onCreate() {
