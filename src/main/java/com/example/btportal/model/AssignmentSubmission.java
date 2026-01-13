@@ -12,38 +12,39 @@ public class AssignmentSubmission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long assignmentId; // The assignment this is for
+    // ✅ FIX 1: Changed from 'Long learnerId' to 'User student'
+    // This matches the mappedBy="student" in your User.java
+    @ManyToOne
+    @JoinColumn(name = "student_id", nullable = false)
+    private User student;
+
+    // ✅ FIX 2: Changed from 'Long assignmentId' to 'Assignment assignment'
+    @ManyToOne
+    @JoinColumn(name = "assignment_id", nullable = false)
+    private Assignment assignment;
 
     @Column(nullable = false)
-    private Long learnerId; // The User ID of the student
+    private Long facilitatorId; // User ID of the facilitator (OK to keep as ID)
 
-    @Column(nullable = false)
-    private Long facilitatorId; // The User ID of the facilitator (for easy lookup)
-
-    private LocalDateTime submissionDate = LocalDateTime.now();
+    private LocalDateTime submissionDate;
 
     @Column(columnDefinition = "TEXT")
     private String submissionText; // For text-based submissions
 
-    private String submissionFileUrl; // For uploaded files
+    private String fileUrl; // Renamed to match frontend logic usually (or keep submissionFileUrl)
 
     // --- Grading Fields ---
-    private Integer score; // The grade given by the facilitator
+    private Integer grade; // Renamed from 'score' to match frontend usually
 
     @Column(columnDefinition = "TEXT")
     private String feedback; // Facilitator's comments
 
-    private Long graderId; // User ID of the facilitator who graded it
+    private Long graderId;
 
     private LocalDateTime gradedAt;
 
-    // You can link these with @ManyToOne if you wish
-    // @ManyToOne
-    // @JoinColumn(name = "assignmentId", insertable = false, updatable = false)
-    // private Assignment assignment;
-    //
-    // @ManyToOne
-    // @JoinColumn(name = "learnerId", insertable = false, updatable = false)
-    // private User learner;
+    @PrePersist
+    protected void onCreate() {
+        this.submissionDate = LocalDateTime.now();
+    }
 }
