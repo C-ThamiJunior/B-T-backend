@@ -23,10 +23,10 @@ public class AssignmentSubmissionService {
     public AssignmentSubmission saveSubmission(AssignmentSubmission submission) {
         // Check if a submission already exists for this Student + Assignment
         // We use .getAssignment().getId() and .getStudent().getId() now
-        Optional<AssignmentSubmission> existing = submissionRepository.findAll().stream()
-                .filter(s -> s.getAssignment().getId().equals(submission.getAssignment().getId())
-                        && s.getStudent().getId().equals(submission.getStudent().getId()))
-                .findFirst();
+        Optional<AssignmentSubmission> existing = submissionRepository.findByAssignmentIdAndStudentId(
+                submission.getAssignment().getId(),
+                submission.getStudent().getId()
+        );
 
         if (existing.isPresent()) {
             AssignmentSubmission subToUpdate = existing.get();
