@@ -12,7 +12,7 @@ RUN chmod +x mvnw
 RUN ./mvnw install -DskipTests
 
 # Expose the port used by the app
-EXPOSE 8081
+EXPOSE 8080
 
 # Run in development mode with DevTools enabled (class hot reload)
 CMD ["./mvnw", "spring-boot:run"]
