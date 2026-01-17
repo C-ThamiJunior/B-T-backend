@@ -3,8 +3,8 @@ package com.example.btportal.controller;
 import com.example.btportal.model.Message;
 import com.example.btportal.model.User;
 import com.example.btportal.service.MessageService;
-import com.example.btportal.repository.UserRepository; // Import this
-import com.example.btportal.exception.ResourceNotFoundException; // Import this
+import com.example.btportal.repository.UserRepository;
+import com.example.btportal.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,27 +20,29 @@ import java.util.Map;
 public class MessageController {
 
     private final MessageService messageService;
-    private final UserRepository userRepository; // Inject UserRepository directly for manual lookups
+    private final UserRepository userRepository;
 
-    // ✅ FIX: Accept a Map (JSON) instead of the Entity to prevent mapping errors
+    // ✅ FIX: Use Map<String, Object> to stop the 500 error caused by "message" field
     @PostMapping
     public ResponseEntity<?> sendMessage(@RequestBody Map<String, Object> payload) {
         try {
-            // 1. Extract IDs and Content safely
+            // 1. Extract IDs safely (Handles both Integer and String inputs)
             Object senderIdObj = ((Map)payload.get("sender")).get("id");
             Object receiverIdObj = ((Map)payload.get("receiver")).get("id");
+
+            // 2. Extract Content (Backend expects 'content', ignores 'message')
             String content = (String) payload.get("content");
 
             Long senderId = Long.valueOf(senderIdObj.toString());
             Long receiverId = Long.valueOf(receiverIdObj.toString());
 
-            // 2. Find Users
+            // 3. Find Users
             User sender = userRepository.findById(senderId)
                     .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
             User receiver = userRepository.findById(receiverId)
                     .orElseThrow(() -> new ResourceNotFoundException("Receiver not found"));
 
-            // 3. Create and Save Message
+            // 4. Create and Save
             Message message = new Message();
             message.setSender(sender);
             message.setReceiver(receiver);
@@ -51,7 +53,7 @@ public class MessageController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error sending message: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
 
