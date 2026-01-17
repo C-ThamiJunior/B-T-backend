@@ -11,19 +11,23 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/messages")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // Allow frontend access
 public class MessageController {
 
     private final MessageService messageService;
 
-    // Send a new message
     @PostMapping
     public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
-        // The request body should be:
-        // { "sender": { "id": 1 }, "receiver": { "id": 2 }, "content": "Hello!" }
         return ResponseEntity.ok(messageService.sendMessage(message));
     }
 
-    // Get chat history between two users
+    // ✅ NEW: Endpoint to get all messages for a user
+    // Usage: GET /api/messages/user/{userId}
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Message>> getUserMessages(@PathVariable Long userId) {
+        return ResponseEntity.ok(messageService.getMessagesForUser(userId));
+    }
+
     @GetMapping("/conversation/{userId1}/{userId2}")
     public ResponseEntity<List<Message>> getConversation(
             @PathVariable Long userId1,
