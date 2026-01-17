@@ -8,7 +8,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter // ✅ Safer than @Data for JPA
+@Getter
 @Setter
 public class Message {
     @Id
@@ -17,23 +17,18 @@ public class Message {
 
     @ManyToOne
     @JoinColumn(name = "sender_id")
-    // ✅ FIX: Stop the loop. Don't load the User's lists when fetching a message.
-    @JsonIgnoreProperties({"enrollments", "submissions", "coursesCreated", "sentMessages", "receivedMessages", "password"})
+    // ✅ CRITICAL: Ignore User fields that cause loops
+    @JsonIgnoreProperties({"enrollments", "submissions", "coursesCreated", "password", "role"})
     private User sender;
 
     @ManyToOne
     @JoinColumn(name = "receiver_id")
-    // ✅ FIX: Same here.
-    @JsonIgnoreProperties({"enrollments", "submissions", "coursesCreated", "sentMessages", "receivedMessages", "password"})
+    // ✅ CRITICAL: Same here
+    @JsonIgnoreProperties({"enrollments", "submissions", "coursesCreated", "password", "role"})
     private User receiver;
 
     @Column(columnDefinition = "TEXT")
     private String content;
 
     private LocalDateTime sentAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.sentAt = LocalDateTime.now();
-    }
-}
+}   
