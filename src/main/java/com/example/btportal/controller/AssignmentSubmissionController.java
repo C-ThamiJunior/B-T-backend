@@ -3,84 +3,108 @@ package com.example.btportal.controller;
 import com.example.btportal.model.Assignment;
 import com.example.btportal.model.AssignmentSubmission;
 import com.example.btportal.model.User;
+import com.example.btportal.model.FileDocument;
 import com.example.btportal.repository.AssignmentRepository;
+import com.example.btportal.repository.AssignmentSubmissionRepository;
+import com.example.btportal.repository.FileDocumentRepository; // Needed for file saving
 import com.example.btportal.repository.UserRepository;
-import com.example.btportal.service.AssignmentSubmissionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/submissions")
-@CrossOrigin(origins = "*") // Allow React Frontend to access
+@RequestMapping("/api/submissions/assignment")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class AssignmentSubmissionController {
 
-    @Autowired
-    private AssignmentSubmissionService submissionService;
+    private final AssignmentSubmissionRepository submissionRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final UserRepository userRepository;
+    private final FileDocumentRepository fileDocumentRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private AssignmentRepository assignmentRepository;
-
-    // ✅ POST: Submit an assignment
-    // We receive IDs (studentId, assignmentId) and convert them to Objects
-    @PostMapping("/assignment")
-    public ResponseEntity<?> submitAssignment(@RequestBody Map<String, Object> payload) {
+    // ✅ FIX: Match parameters exactly to StudentDashboard.tsx
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> submitAssignment(
+            @RequestParam("assignmentId") Long assignmentId,
+            @RequestParam("studentId") Long studentId,
+            @RequestParam(value = "comments", required = false) String comments,
+            @RequestParam("file") MultipartFile file
+    ) {
         try {
-            Long studentId = Long.valueOf(payload.get("learnerId").toString());
-            Long assignmentId = Long.valueOf(payload.get("assignmentId").toString());
-            String fileUrl = (String) payload.get("fileUrl");
-            String submissionText = (String) payload.get("submissionText");
-            Long facilitatorId = Long.valueOf(payload.get("facilitatorId").toString());
-
-            // 1. Fetch Entities
+            // 1. Validate User & Assignment
             User student = userRepository.findById(studentId)
                     .orElseThrow(() -> new RuntimeException("Student not found"));
+
             Assignment assignment = assignmentRepository.findById(assignmentId)
                     .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
-            // 2. Create Submission Object
+            // 2. Check if already submitted (Optional: prevent duplicates)
+            // Optional<AssignmentSubmission> existing = submissionRepository.findByAssignmentIdAndStudentId(assignmentId, studentId);
+            // if (existing.isPresent()) return ResponseEntity.badRequest().body("Already submitted");
+
+            // 3. Handle File Upload
+            String fileUrl = null;
+            if (file != null && !file.isEmpty()) {
+                String uniqueName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+
+                FileDocument fileDoc = new FileDocument();
+                fileDoc.setFileName(uniqueName);
+                fileDoc.setFileType(file.getContentType());
+                fileDoc.setData(file.getBytes());
+                fileDocumentRepository.save(fileDoc);
+
+                fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path("/files/")
+                        .path(uniqueName)
+                        .toUriString();
+            }
+
+            // 4. Create Submission
             AssignmentSubmission submission = new AssignmentSubmission();
-            submission.setStudent(student);        // Set the User object
-            submission.setAssignment(assignment);  // Set the Assignment object
-            submission.setFacilitatorId(facilitatorId);
+            submission.setAssignmentId(assignmentId);
+            submission.setStudentId(studentId);
+            submission.setSubmissionText(comments); // Map 'comments' to 'submissionText'
             submission.setFileUrl(fileUrl);
-            submission.setSubmissionText(submissionText);
             submission.setSubmissionDate(LocalDateTime.now());
 
-            // 3. Save
-            AssignmentSubmission saved = submissionService.saveSubmission(submission);
-            return ResponseEntity.ok(saved);
+            // ✅ AUTO-FIX: Get facilitator ID from the Assignment itself
+            submission.setFacilitatorId(assignment.getFacilitatorId());
+
+            submissionRepository.save(submission);
+
+            return ResponseEntity.ok(Map.of("message", "Submission successful"));
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("Error submitting assignment: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
 
-    // ✅ GET: All submissions
-    @GetMapping("/assignment")
-    public List<AssignmentSubmission> getAllSubmissions() {
-        return submissionService.getAllSubmissions();
+    // ... Keep your other GET/PUT methods (like gradeSubmission) below ...
+    @GetMapping
+    public ResponseEntity<List<AssignmentSubmission>> getAllSubmissions() {
+        return ResponseEntity.ok(submissionRepository.findAll());
     }
 
-    // ✅ PUT: Grade a submission
-    @PutMapping("/assignment/{id}/grade")
-    public ResponseEntity<?> gradeSubmission(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
-        try {
-            Integer grade = Integer.valueOf(payload.get("grade").toString());
-            String feedback = (String) payload.get("feedback");
+    @PutMapping("/{id}/grade")
+    public ResponseEntity<?> gradeSubmission(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        AssignmentSubmission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Submission not found"));
 
-            AssignmentSubmission updated = submissionService.gradeSubmission(id, grade, feedback);
-            return ResponseEntity.ok(updated);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error grading submission: " + e.getMessage());
-        }
+        submission.setGrade(Integer.parseInt(body.get("grade").toString()));
+        submission.setFeedback((String) body.get("feedback"));
+        submission.setGradedAt(LocalDateTime.now());
+
+        submissionRepository.save(submission);
+        return ResponseEntity.ok(submission);
     }
-}
+}   
