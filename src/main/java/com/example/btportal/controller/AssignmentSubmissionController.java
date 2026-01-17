@@ -6,7 +6,7 @@ import com.example.btportal.model.User;
 import com.example.btportal.model.FileDocument;
 import com.example.btportal.repository.AssignmentRepository;
 import com.example.btportal.repository.AssignmentSubmissionRepository;
-import com.example.btportal.repository.FileDocumentRepository; // Needed for file saving
+import com.example.btportal.repository.FileDocumentRepository;
 import com.example.btportal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -31,7 +31,6 @@ public class AssignmentSubmissionController {
     private final UserRepository userRepository;
     private final FileDocumentRepository fileDocumentRepository;
 
-    // ✅ FIX: Match parameters exactly to StudentDashboard.tsx
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> submitAssignment(
             @RequestParam("assignmentId") Long assignmentId,
@@ -40,16 +39,13 @@ public class AssignmentSubmissionController {
             @RequestParam("file") MultipartFile file
     ) {
         try {
-            // 1. Validate User & Assignment
+            // 1. Validate & Fetch Student Object
             User student = userRepository.findById(studentId)
                     .orElseThrow(() -> new RuntimeException("Student not found"));
 
+            // 2. Validate & Fetch Assignment Object
             Assignment assignment = assignmentRepository.findById(assignmentId)
                     .orElseThrow(() -> new RuntimeException("Assignment not found"));
-
-            // 2. Check if already submitted (Optional: prevent duplicates)
-            // Optional<AssignmentSubmission> existing = submissionRepository.findByAssignmentIdAndStudentId(assignmentId, studentId);
-            // if (existing.isPresent()) return ResponseEntity.badRequest().body("Already submitted");
 
             // 3. Handle File Upload
             String fileUrl = null;
@@ -68,16 +64,17 @@ public class AssignmentSubmissionController {
                         .toUriString();
             }
 
-            // 4. Create Submission
+            // 4. Create Submission Object
             AssignmentSubmission submission = new AssignmentSubmission();
-            submission.setAssignmentId(assignmentId);
-            submission.setStudentId(studentId);
-            submission.setSubmissionText(comments); // Map 'comments' to 'submissionText'
+
+            // ✅ FIX: Set the actual OBJECTS, not the IDs
+            submission.setAssignment(assignment);
+            submission.setStudent(student);
+
+            submission.setFacilitatorId(assignment.getFacilitatorId());
+            submission.setSubmissionText(comments);
             submission.setFileUrl(fileUrl);
             submission.setSubmissionDate(LocalDateTime.now());
-
-            // ✅ AUTO-FIX: Get facilitator ID from the Assignment itself
-            submission.setFacilitatorId(assignment.getFacilitatorId());
 
             submissionRepository.save(submission);
 
@@ -89,7 +86,6 @@ public class AssignmentSubmissionController {
         }
     }
 
-    // ... Keep your other GET/PUT methods (like gradeSubmission) below ...
     @GetMapping
     public ResponseEntity<List<AssignmentSubmission>> getAllSubmissions() {
         return ResponseEntity.ok(submissionRepository.findAll());
@@ -100,11 +96,14 @@ public class AssignmentSubmissionController {
         AssignmentSubmission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Submission not found"));
 
-        submission.setGrade(Integer.parseInt(body.get("grade").toString()));
+        Object gradeObj = body.get("grade");
+        int grade = gradeObj instanceof Integer ? (Integer) gradeObj : Integer.parseInt(gradeObj.toString());
+
+        submission.setGrade(grade);
         submission.setFeedback((String) body.get("feedback"));
         submission.setGradedAt(LocalDateTime.now());
 
         submissionRepository.save(submission);
         return ResponseEntity.ok(submission);
     }
-}   
+}
