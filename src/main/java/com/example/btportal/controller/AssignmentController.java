@@ -1,40 +1,64 @@
 package com.example.btportal.controller;
 
 import com.example.btportal.model.Assignment;
-import com.example.btportal.model.AssignmentSubmission;
 import com.example.btportal.service.AssignmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/assignments")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class AssignmentController {
 
     private final AssignmentService assignmentService;
 
-    // ✅ POST /api/assignments - This is what your frontend button will call
-    @PostMapping
-    public ResponseEntity<Assignment> createAssignment(@RequestBody Assignment assignment) {
-        // The 'assignment' body will come from the frontend form
-        // It needs { title, description, courseId, moduleId, facilitatorId, dueDate, totalMarks }
-        Assignment savedAssignment = assignmentService.createAssignment(assignment);
-        return ResponseEntity
-                .created(URI.create("/api/assignments/" + savedAssignment.getId()))
-                .body(savedAssignment);
+    // ✅ UPDATED POST: Handles Multipart Data (File + Text)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Assignment> createAssignment(
+            @RequestParam("title") String title,
+            @RequestParam("description") String description,
+            @RequestParam("courseId") Long courseId,
+            @RequestParam("moduleId") Long moduleId,
+            @RequestParam("facilitatorId") Long facilitatorId,
+            @RequestParam("dueDate") String dueDate, // Received as String, parsed below
+            @RequestParam("totalMarks") int totalMarks,
+            @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        try {
+            Assignment assignment = new Assignment();
+            assignment.setTitle(title);
+            assignment.setDescription(description);
+            assignment.setCourseId(courseId);
+            assignment.setModuleId(moduleId);
+            assignment.setFacilitatorId(facilitatorId);
+            assignment.setTotalMarks(totalMarks);
+            assignment.setDueDate(LocalDateTime.parse(dueDate)); // Parse ISO date string
+            assignment.setActive(true);
+
+            Assignment savedAssignment = assignmentService.createAssignment(assignment, file);
+
+            return ResponseEntity
+                    .created(URI.create("/api/assignments/" + savedAssignment.getId()))
+                    .body(savedAssignment);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
-    // ✅ GET /api/assignments - To get all assignments for the UI
     @GetMapping
     public ResponseEntity<List<Assignment>> getAllAssignments() {
         return ResponseEntity.ok(assignmentService.getAllAssignments());
     }
 
-    // ✅ GET /api/assignments/{id} - To get a single one
     @GetMapping("/{id}")
     public ResponseEntity<Assignment> getAssignmentById(@PathVariable Long id) {
         return assignmentService.getAssignmentById(id)
@@ -42,13 +66,11 @@ public class AssignmentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ✅ GET /api/assignments/module/{moduleId} - Useful for your grading tab
     @GetMapping("/module/{moduleId}")
     public ResponseEntity<List<Assignment>> getAssignmentsByModule(@PathVariable Long moduleId) {
         return ResponseEntity.ok(assignmentService.getAssignmentsByModuleId(moduleId));
     }
 
-    // ✅ DELETE /api/assignments/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
         try {
