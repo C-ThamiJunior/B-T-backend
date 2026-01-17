@@ -68,10 +68,13 @@ public class AssignmentSubmissionController {
             AssignmentSubmission submission = new AssignmentSubmission();
 
             // ✅ FIX: Set the actual OBJECTS, not the IDs
+            // The compilation error happened because we tried to set IDs directly.
             submission.setAssignment(assignment);
             submission.setStudent(student);
 
+            // Note: facilitatorId seems to be a raw ID in your entity, so this is fine.
             submission.setFacilitatorId(assignment.getFacilitatorId());
+
             submission.setSubmissionText(comments);
             submission.setFileUrl(fileUrl);
             submission.setSubmissionDate(LocalDateTime.now());
