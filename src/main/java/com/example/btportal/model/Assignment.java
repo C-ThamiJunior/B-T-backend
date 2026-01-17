@@ -1,5 +1,6 @@
 package com.example.btportal.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -16,31 +17,26 @@ public class Assignment {
     private String title;
 
     @Column(columnDefinition = "TEXT")
-    private String description; // From your frontend form
+    private String description;
 
     @Column(nullable = false)
-    private Long courseId; // To link to the Course
+    private Long courseId;
 
     @Column(nullable = false)
-    private Long moduleId; // To link to the Module
+    private Long moduleId;
 
     @Column(nullable = false)
-    private Long facilitatorId; // The User ID of the creator
+    private Long facilitatorId;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    private LocalDateTime dueDate; // From your frontend form
+    private LocalDateTime dueDate;
 
-    private int totalMarks; // From your frontend form
+    private int totalMarks;
 
+    @JsonProperty("isActive")
     private boolean isActive = true;
 
-    // You can add relationships later, e.g.:
-    // @ManyToOne
-    // @JoinColumn(name = "courseId", insertable = false, updatable = false)
-    // private Course course;
-    //
-    // @ManyToOne
-    // @JoinColumn(name = "moduleId", insertable = false, updatable = false)
-    // private Module module;
+    // ✅ NEW: Field to store the file link
+    private String fileUrl;
 }
