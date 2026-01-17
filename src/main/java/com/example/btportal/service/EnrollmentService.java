@@ -39,4 +39,9 @@ public class EnrollmentService {
     public List<Enrollment> getStudentEnrollments(Long userId) {
         return enrollmentRepository.findByUserId(userId);
     }
+
+    // ✅ ADD THIS METHOD
+    public List<Enrollment> getAllEnrollments() {
+        return enrollmentRepository.findAll();
+    }
 }
