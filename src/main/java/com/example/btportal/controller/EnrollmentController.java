@@ -10,6 +10,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/enrollments")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // ✅ Ensure Frontend can access this
 public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
@@ -25,5 +26,11 @@ public class EnrollmentController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserEnrollments(@PathVariable Long userId) {
         return ResponseEntity.ok(enrollmentService.getStudentEnrollments(userId));
+    }
+
+    // ✅ ADD THIS ENDPOINT to fix the "Request method 'GET' is not supported" error
+    @GetMapping
+    public ResponseEntity<?> getAllEnrollments() {
+        return ResponseEntity.ok(enrollmentService.getAllEnrollments());
     }
 }
