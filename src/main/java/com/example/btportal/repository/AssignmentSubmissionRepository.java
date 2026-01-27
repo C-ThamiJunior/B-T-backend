@@ -2,6 +2,8 @@ package com.example.btportal.repository;
 
 import com.example.btportal.model.AssignmentSubmission;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -10,11 +12,11 @@ import java.util.Optional;
 @Repository
 public interface AssignmentSubmissionRepository extends JpaRepository<AssignmentSubmission, Long> {
 
-    // ✅ FIXED: Changed 'LearnerId' to 'StudentId'
-    // This works because Spring knows 'student' has an 'id' field.
-    Optional<AssignmentSubmission> findByAssignmentIdAndStudentId(Long assignmentId, Long studentId);
+    // ✅ FIXED: Use explicit JPQL queries to avoid "assignmentId" property confusion
 
-    // If you have other methods using 'LearnerId', update them too:
-    // List<AssignmentSubmission> findByLearnerId(Long learnerId);  <-- DELETE THIS
-    List<AssignmentSubmission> findByStudentId(Long studentId); // <-- USE THIS
+    @Query("SELECT s FROM AssignmentSubmission s WHERE s.assignment.id = :assignmentId AND s.student.id = :studentId")
+    Optional<AssignmentSubmission> findByAssignmentIdAndStudentId(@Param("assignmentId") Long assignmentId, @Param("studentId") Long studentId);
+
+    @Query("SELECT s FROM AssignmentSubmission s WHERE s.student.id = :studentId")
+    List<AssignmentSubmission> findByStudentId(@Param("studentId") Long studentId);
 }
